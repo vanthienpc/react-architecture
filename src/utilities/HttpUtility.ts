@@ -33,6 +33,43 @@ export default class HttpUtility {
     );
   }
 
+  public static async post(
+    endpoint: string,
+    data?: any,
+  ): Promise<AxiosResponse | HttpErrorResponseModel> {
+    const config: AxiosRequestConfig | undefined = data ? { data } : undefined;
+
+    return HttpUtility._request(
+      {
+        url: endpoint,
+        method: RequestMethod.Post,
+      },
+      config,
+    );
+  }
+
+  public static async put(
+    endpoint: string,
+    data?: any,
+  ): Promise<AxiosResponse | HttpErrorResponseModel> {
+    const config: AxiosRequestConfig | undefined = data ? { data } : undefined;
+
+    return HttpUtility._request(
+      {
+        url: endpoint,
+        method: RequestMethod.Put,
+      },
+      config,
+    );
+  }
+
+  public static async delete(endpoint: string): Promise<AxiosResponse | HttpErrorResponseModel> {
+    return HttpUtility._request({
+      url: endpoint,
+      method: RequestMethod.Delete,
+    });
+  }
+
   private static async _request(
     restRequest: Partial<Request>,
     config?: AxiosRequestConfig,
@@ -51,8 +88,7 @@ export default class HttpUtility {
           ...config?.headers,
         },
       };
-
-      const [axiosResponse] = await Promise.all([axios(axiosRequestConfig), HttpUtility._delay]);
+      const [axiosResponse] = await Promise.all([axios(axiosRequestConfig), HttpUtility._delay()]);
 
       const { status, data, request } = axiosResponse;
 
@@ -69,9 +105,12 @@ export default class HttpUtility {
         );
       }
 
-      return { ...axiosResponse };
+      return {
+        ...axiosResponse,
+      };
     } catch (error) {
       if (error.response) {
+        // The request was made and the server responded with a status code that falls out of the range of 2xx
         const { status, statusText, data } = error.response;
         const errors: string[] = data.hasOwnProperty('errors')
           ? [statusText, ...data.errors]
@@ -88,6 +127,7 @@ export default class HttpUtility {
           restRequest,
         );
       } else if (error.request) {
+        // The request was made but no response was received `error.request` is an instance of XMLHttpRequest in the browser and an instance of http.ClientRequest in node.js
         const { status, statusText, responseURL } = error.request;
 
         return HttpUtility._fillInErrorWithDefaults(
@@ -102,6 +142,7 @@ export default class HttpUtility {
         );
       }
 
+      // Something happened in setting up the request that triggered an Error
       return HttpUtility._fillInErrorWithDefaults(
         {
           status: 0,
@@ -127,17 +168,19 @@ export default class HttpUtility {
     model.url = error.url || request.url!;
     model.raw = error.raw;
 
+    // Remove anything with undefined or empty strings.
     model.errors = model.errors.filter(Boolean);
 
     return model;
   }
 
   /**
-   * We want show the loading indicator to the user but sometimes the api request finished too quickly.
-   * This makes sure there the loading indicator is viusal for at least a given time
+   * We want to show the loading indicator to the user but sometimes the api
+   * request finished too quickly. This makes sure there the loading indicator is
+   * visual for at least a given time.
    *
    * @param duration
-   * @return {Promise<unknown>}
+   * @returns {Promise<unknown>}
    * @private
    */
   private static _delay(duration: number = 250): Promise<void> {
