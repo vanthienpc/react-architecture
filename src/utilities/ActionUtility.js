@@ -1,12 +1,12 @@
 import HttpErrorResponseModel from 'models/HttpErrorResponseModel';
 
 export async function createThunkEffect(dispatch, actionType, effect, ...args) {
-  dispatch(ActionUtility.createAction(actionType));
+  dispatch(createAction(actionType));
 
   const response = await effect(...args);
   const isError = response instanceof HttpErrorResponseModel;
 
-  dispatch(ActionUtility.createAction(`${actionType}_FINISHED`, model, isError));
+  dispatch(createAction(`${actionType}_FINISHED`, model, isError));
 
   return response;
 }
