@@ -1,21 +1,16 @@
-import { ThunkDispatch } from 'redux-thunk';
 import IAction from 'models/IAction';
+import { call, put } from 'redux-saga/effects';
 import HttpErrorResponseModel from 'models/HttpErrorResponseModel';
 
-export async function createThunkEffect<P>(
-  dispatch: ThunkDispatch<{}, {}, any>,
-  actionType: string,
+export function* createThunkEffect<P>(
+  action: (...args: any[]) => IAction<any>,
   effect: (...args: any[]) => Promise<P | HttpErrorResponseModel>,
   ...args: any[]
-): Promise<P | HttpErrorResponseModel> {
-  dispatch(createAction(actionType));
-
-  const response = await effect(...args);
+): Generator {
+  const response = yield call(effect, ...args);
   const isError = response instanceof HttpErrorResponseModel;
 
-  dispatch(createAction(`${actionType}_FINISHED`, response, isError));
-
-  return response;
+  return yield put(action(response, isError));
 }
 
 export function createAction<T = undefined>(
