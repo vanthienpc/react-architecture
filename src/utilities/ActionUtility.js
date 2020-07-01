@@ -1,14 +1,11 @@
+import { call, put } from 'redux-saga/effects';
 import HttpErrorResponseModel from 'models/HttpErrorResponseModel';
 
-export async function createThunkEffect(dispatch, actionType, effect, ...args) {
-  dispatch(createAction(actionType));
-
-  const response = await effect(...args);
+export function* createSagaEffect(action, effect, ...args) {
+  const response = yield call(effect, ...args);
   const isError = response instanceof HttpErrorResponseModel;
 
-  dispatch(createAction(`${actionType}_FINISHED`, model, isError));
-
-  return response;
+  return yield put(action(response, isError));
 }
 
 export function createAction(type, payload, error = false, meta = null) {
